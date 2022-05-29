@@ -112,16 +112,19 @@ Adapt.adapt_structure(to, x::BatchDuplicatedNoNeed) = BatchDuplicatedNoNeed(adap
 Abstract type for what differentiation mode will be used.
 """
 abstract type Mode end
+issplit(::Mode) = false
 
 """
-    struct Reverse <: Mode
+    struct Reverse{Split} <: Mode
 
 Reverse mode differentiation
 """
-struct ReverseMode <: Mode
+struct ReverseMode{Split} <: Mode
 end
-const Reverse = ReverseMode()
+const Reverse = ReverseMode{false}()
+const ReverseSplit = ReverseMode{true}()
 guess_activity(::Type{T}, ::ReverseMode) where T = guess_activity(T)
+issplit(::ReverseMode{Split}) where Split = Split
 
 """
     struct Forward <: Mode
@@ -162,6 +165,9 @@ end
     end
 end
 
+convert(::Type{API.CDerivativeMode}, ::ReverseMode{false}) = API.DEM_ReverseModeCombined
+convert(::Type{API.CDerivativeMode}, ::ReverseMode{true}) = API.DEM_ReverseModeGradient
+convert(::Type{API.CDerivativeMode}, ::ForwardMode) = API.DEM_ForwardMode
 
 include("logic.jl")
 include("typeanalysis.jl")
